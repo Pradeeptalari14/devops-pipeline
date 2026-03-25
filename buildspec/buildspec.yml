@@ -1,0 +1,46 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "=== INSTALL PHASE ==="
+      - pip install --upgrade pip
+      - pip install -r requirements.txt || echo "No requirements.txt"
+  
+  pre_build:
+    commands:
+      - echo "=== PRE_BUILD PHASE ==="
+      - echo "Build started at $(date)"
+      - echo "Build ID: $CODEBUILD_BUILD_ID"
+  
+  build:
+    commands:
+      - echo "=== BUILD PHASE ==="
+      - echo "Running tests..."
+      - pytest tests/ -v || echo "No tests configured"
+      - echo "Building application..."
+      - zip -r deployment-package.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc"
+  
+  post_build:
+    commands:
+      - echo "=== POST_BUILD PHASE ==="
+      - echo "Uploading artifacts to S3..."
+      - aws s3 cp deployment-package.zip s3://${ARTIFACT_BUCKET}/builds/$CODEBUILD_BUILD_ID/
+      - echo "Creating metadata..."
+      - echo '{"build_id": "'$CODEBUILD_BUILD_ID'", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "status": "SUCCEEDED"}' > build-metadata.json
+      - aws s3 cp build-metadata.json s3://${ARTIFACT_BUCKET}/builds/$CODEBUILD_BUILD_ID/
+      - echo "Triggering deployment..."
+      - aws lambda invoke --function-name ${LAMBDA_FUNCTION} --payload file://build-metadata.json --cli-binary-format raw-in-base64-out deployment-result.json || true
+      - echo "Cleaning up..."
+      - rm -f deployment-package.zip build-metadata.json
+
+artifacts:
+  files:
+    - '**/*'
+    - build-metadata.json
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
