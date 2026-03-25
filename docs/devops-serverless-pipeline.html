@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverless DevOps Pipeline on AWS | Complete Guide</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    
+    <!-- Prism for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-hcl.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .code-header {
+            background: #2d2d2d;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #3d3d3d;
+        }
+        
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .code-dot.red { background: #ff5f56; }
+        .code-dot.yellow { background: #ffbd2e; }
+        .code-dot.green { background: #27c93f; }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .mermaid {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .cost-free { color: #22c55e; }
+        .cost-paid { color: #ef4444; }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            z-index: 50;
+            transition: width 0.1s;
+        }
+        
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            background: #1e1e1e;
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: nowrap;
+            z-index: 100;
+        }
+        
+        .diagram-container {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow: auto;
+        }
+        
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            margin: 60px 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-indicator" id="scrollIndicator"></div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-gray-200 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white font-bold text-xl">
+                        🔬
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-gray-900">DevOps Pipeline</h1>
+                        <p class="text-xs text-gray-500">AWS Free Tier · $0/month</p>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="lg:hidden p-2 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                
+                <!-- Desktop Nav -->
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="#overview" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Overview</a>
+                    <a href="#architecture" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Architecture</a>
+                    <a href="#tools" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Tools</a>
+                    <a href="#implementation" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Implementation</a>
+                    <a href="#costs" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">Costs</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200">
+            <div class="px-4 py-3 space-y-1">
+                <a href="#overview" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Overview</a>
+                <a href="#architecture" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Architecture</a>
+                <a href="#tools" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Tools</a>
+                <a href="#implementation" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Implementation</a>
+                <a href="#costs" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Costs</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 gradient-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span class="text-white text-sm font-medium">100% AWS Free Tier Compatible</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                Serverless DevOps<br/>Pipeline on AWS
+            </h1>
+            <p class="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+                Complete CI/CD infrastructure with Infrastructure as Code. Zero servers, zero cost, production-ready.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="#implementation" class="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors shadow-lg">
+                    <i class="fas fa-rocket mr-2"></i>Start Building
+                </a>
+                <a href="#architecture" class="bg-white/20 backdrop-blur-sm text-white border border-white/30 px-8 py-3 rounded-full font-semibold hover:bg-white/30 transition-colors">
+                    <i class="fas fa-sitemap mr-2"></i>View Architecture
+                </a>
+            </div>
+            
+            <!-- Tech Stack Icons -->
+            <div class="mt-12 flex justify-center gap-8 flex-wrap">
+                <div class="text-center text-white/60 hover:text-white transition-colors">
+                    <i class="fab fa-aws text-4xl mb-2"></i>
+                    <p class="text-sm">AWS</p>
+                </div>
+                <div class="text-center text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-code text-4xl mb-2"></i>
+                    <p class="text-sm">CodeCommit</p>
+                </div>
+                <div class="text-center text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-hammer text-4xl mb-2"></i>
+                    <p class="text-sm">CodeBuild</p>
+                </div>
+                <div class="text-center text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-bolt text-4xl mb-2"></i>
+                    <p class="text-sm">Lambda</p>
+                </div>
+                <div class="text-center text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-cube text-4xl mb-2"></i>
+                    <p class="text-sm">Terraform</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Overview Section -->
+    <section id="overview" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What We're Building</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    A complete serverless DevOps pipeline using only AWS Free Tier services. No servers to manage, no monthly costs.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Benefit Card 1 -->
+                <div class="card p-6">
+                    <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-4">
+                        <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Zero Cost</h3>
+                    <p class="text-gray-600 text-sm">Uses only always-free AWS services. No credit card charges ever.</p>
+                </div>
+                
+                <!-- Benefit Card 2 -->
+                <div class="card p-6">
+                    <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4">
+                        <i class="fas fa-server text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Zero Maintenance</h3>
+                    <p class="text-gray-600 text-sm">No servers to patch, scale, or monitor. Fully managed services.</p>
+                </div>
+                
+                <!-- Benefit Card 3 -->
+                <div class="card p-6">
+                    <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
+                        <i class="fas fa-expand-arrows-alt text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Auto-Scaling</h3>
+                    <p class="text-gray-600 text-sm">Scales from zero to millions automatically. Pay-per-use model.</p>
+                </div>
+                
+                <!-- Benefit Card 4 -->
+                <div class="card p-6">
+                    <div class="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center mb-4">
+                        <i class="fas fa-shield-alt text-orange-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Secure by Design</h3>
+                    <p class="text-gray-600 text-sm">IAM-controlled access, encrypted storage, private repositories.</p>
+                </div>
+            </div>
+            
+            <!-- Component Breakdown -->
+            <div class="mt-16">
+                <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">Component Breakdown</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-gray-200">
+                                <th class="py-4 px-4 font-semibold text-gray-900">Layer</th>
+                                <th class="py-4 px-4 font-semibold text-gray-900">Service</th>
+                                <th class="py-4 px-4 font-semibold text-gray-900">Purpose</th>
+                                <th class="py-4 px-4 font-semibold text-gray-900">Free Tier</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Source Control</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">AWS CodeCommit</td>
+                                <td class="py-4 px-4 text-gray-600">Git repository hosting</td>
+                                <td class="py-4 px-4 cost-free font-semibold">5 users, 50GB</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Build</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">AWS CodeBuild</td>
+                                <td class="py-4 px-4 text-gray-600">Compile, test, package</td>
+                                <td class="py-4 px-4 cost-free font-semibold">100 min/month</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Compute</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">AWS Lambda</td>
+                                <td class="py-4 px-4 text-gray-600">Run deployment scripts</td>
+                                <td class="py-4 px-4 cost-free font-semibold">1M requests/month</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Storage</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">Amazon S3</td>
+                                <td class="py-4 px-4 text-gray-600">Store build artifacts</td>
+                                <td class="py-4 px-4 cost-free font-semibold">5GB</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Database</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">DynamoDB</td>
+                                <td class="py-4 px-4 text-gray-600">Store deployment state</td>
+                                <td class="py-4 px-4 cost-free font-semibold">25GB</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Monitoring</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">CloudWatch</td>
+                                <td class="py-4 px-4 text-gray-600">Logs and metrics</td>
+                                <td class="py-4 px-4 cost-free font-semibold">Basic tier</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Notifications</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">Amazon SNS</td>
+                                <td class="py-4 px-4 text-gray-600">Alerts and notifications</td>
+                                <td class="py-4 px-4 cost-free font-semibold">1M requests/month</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Orchestration</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">EventBridge</td>
+                                <td class="py-4 px-4 text-gray-600">Trigger on Git events</td>
+                                <td class="py-4 px-4 cost-free font-semibold">Free tier</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-4 text-gray-600">Infrastructure</td>
+                                <td class="py-4 px-4 font-medium text-gray-900">Terraform</td>
+                                <td class="py-4 px-4 text-gray-600">Provision all resources</td>
+                                <td class="py-4 px-4 cost-free font-semibold">Local tool (free)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <div class="section-divider max-w-4xl mx-auto"></div>
+    
+    <!-- Architecture Section -->
+    <section id="architecture" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Architecture</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Visual overview of the complete pipeline flow from code commit to deployment.
+                </p>
+            </div>
+            
+            <!-- Architecture Diagram -->
+            <div class="diagram-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">Complete Pipeline Flow</h3>
+                <div class="mermaid">
+flowchart TB
+    subgraph Developer["👤 Developer Workflow"]
+        A[Write Code] --> B[git add]
+        B --> C[git commit]
+        C --> D[git push]
+    end
+
+    subgraph Source["📦 Source Control"]
+        D --> E[CodeCommit]
+        E --> F[EventBridge Trigger]
+    end
+
+    subgraph Build["🔨 Build Phase"]
+        F --> G[Start CodeBuild]
+        G --> H[Install Dependencies]
+        H --> I[Run Tests]
+        I --> J{Tests Pass?}
+        J -->|Yes| K[Build Artifact]
+        J -->|No| L[Fail Build]
+        K --> M[Upload to S3]
+    end
+
+    subgraph Deploy["🚀 Deploy Phase"]
+        M --> N[Lambda Invoked]
+        N --> O[Deploy Resources]
+        O --> P[Update DynamoDB]
+    end
+
+    subgraph Notify["📢 Notifications"]
+        P --> R[SNS Notification]
+        L --> R
+        R --> S[Email/Slack]
+    end
+
+    style Developer fill:#dbeafe
+    style Build fill:#fef3c7
+    style Deploy fill:#d1fae5
+    style Notify fill:#fce7f3
+    style Source fill:#e0e7ff
+                </div>
+            </div>
+            
+            <!-- Step Explanations -->
+            <div class="mt-12 space-y-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6">Flow Explanation</h3>
+                
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="step-number flex-shrink-0">1</div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Developer Workflow</h4>
+                            <p class="text-sm text-gray-600 mt-1">You write code locally, commit changes, and push to the CodeCommit repository. This is the source of truth for all changes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="step-number flex-shrink-0">2</div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Event Detection</h4>
+                            <p class="text-sm text-gray-600 mt-1">EventBridge detects the Git push and triggers the CodeBuild project automatically. No manual intervention needed.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="step-number flex-shrink-0">3</div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Build Phase</h4>
+                            <p class="text-sm text-gray-600 mt-1">CodeBuild creates a clean environment, installs dependencies, runs tests, and packages the application into an artifact.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="step-number flex-shrink-0">4</div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Artifact Storage</h4>
+                            <p class="text-sm text-gray-600 mt-1">Build artifacts are stored in S3 with versioning enabled. This provides durability and rollback capability.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="step-number flex-shrink-0">5</div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Serverless Deploy</h4>
+                            <p class="text-sm text-gray-600 mt-1">Lambda function is invoked to deploy the artifact. It updates infrastructure and records state in DynamoDB.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="step-number flex-shrink-0">6</div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Notifications</h4>
+                            <p class="text-sm text-gray-600 mt-1">SNS sends email/Slack notifications about build status. CloudWatch captures logs for debugging.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- State Management Diagram -->
+            <div class="diagram-container mt-12">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">Terraform State Management</h3>
+                <div class="mermaid">
+flowchart LR
+    subgraph Local["💻 Local Machine"]
+        A[Terraform Config<br/>.tf files] --> B[Terraform CLI]
+    end
+
+    subgraph AWS["☁️ AWS Cloud"]
+        B --> C[Terraform Plan]
+        C --> D[Terraform Apply]
+        D --> E[Create/Update<br/>Resources]
+        
+        subgraph State["🔐 State Management"]
+            F[S3 Bucket<br/>terraform-state] --> G[DynamoDB Table<br/>terraform-locks]
+            E --> F
+        end
+        
+        subgraph Resources["📦 Created Resources"]
+            E --> H[CodeCommit Repo]
+            E --> I[CodeBuild Project]
+            E --> J[Lambda Functions]
+            E --> K[S3 Buckets]
+            E --> L[IAM Roles]
+        end
+    end
+
+    B -.->|Reads/Writes| F
+    B -.->|Lock/Unlock| G
+
+    style Local fill:#dbeafe
+    style AWS fill:#fef3c7
+    style State fill:#fce7f3
+    style Resources fill:#d1fae5
+                </div>
+                <div class="mt-6 grid md:grid-cols-3 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-blue-900 mb-2">S3 Backend</h4>
+                        <p class="text-sm text-blue-700">Stores state file centrally. Enables team collaboration and provides backup history.</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-purple-900 mb-2">DynamoDB Locking</h4>
+                        <p class="text-sm text-purple-700">Prevents concurrent runs that could corrupt state. Critical for team environments.</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-green-900 mb-2">Local CLI</h4>
+                        <p class="text-sm text-green-700">Developer control. Review changes with <code>terraform plan</code> before applying.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <div class="section-divider max-w-4xl mx-auto"></div>
+    
+    <!-- Tools Section -->
+    <section id="tools" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Tool Selection & Alternatives</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Comparison of tools and why we chose each one. Includes market alternatives for every component.
+                </p>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="flex flex-wrap gap-2 mb-8 justify-center">
+                <button class="tab-btn active px-6 py-3 rounded-full font-medium bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg" data-tab="codecommit">
+                    Source Control
+                </button>
+                <button class="tab-btn px-6 py-3 rounded-full font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-tab="codebuild">
+                    Build Service
+                </button>
+                <button class="tab-btn px-6 py-3 rounded-full font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-tab="terraform">
+                    Infrastructure
+                </button>
+                <button class="tab-btn px-6 py-3 rounded-full font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-tab="lambda">
+                    Serverless
+                </button>
+            </div>
+            
+            <!-- CodeCommit Tab -->
+            <div id="codecommit" class="tab-content active">
+                <div class="card p-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center">
+                            <i class="fas fa-code-branch text-orange-600 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Source Control: AWS CodeCommit</h3>
+                            <p class="text-gray-600">Private Git repository hosting integrated with AWS IAM</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Why CodeCommit?</h4>
+                        <ul class="space-y-2 text-gray-600">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Free for 5 users (GitHub costs $4/user/month)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Integrated with AWS IAM (no separate authentication)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Triggers AWS services natively via EventBridge</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Private repositories by default</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full comparison-table text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4 text-left rounded-tl-lg">Tool</th>
+                                    <th class="py-3 px-4 text-left">Cost</th>
+                                    <th class="py-3 px-4 text-left">Pros</th>
+                                    <th class="py-3 px-4 text-left">Cons</th>
+                                    <th class="py-3 px-4 text-left rounded-tr-lg">Best For</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="bg-green-50">
+                                    <td class="py-3 px-4 font-semibold text-green-700">CodeCommit</td>
+                                    <td class="py-3 px-4 cost-free font-bold">FREE</td>
+                                    <td class="py-3 px-4">AWS native, IAM integration</td>
+                                    <td class="py-3 px-4">Smaller ecosystem</td>
+                                    <td class="py-3 px-4 font-semibold">Free tier projects</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">GitHub</td>
+                                    <td class="py-3 px-4 cost-paid">$4/user/mo</td>
+                                    <td class="py-3 px-4">Largest ecosystem, Actions CI</td>
+                                    <td class="py-3 px-4">Costs money, separate auth</td>
+                                    <td class="py-3 px-4">Open source, teams</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">GitLab</td>
+                                    <td class="py-3 px-4">$0-19/user</td>
+                                    <td class="py-3 px-4">Built-in CI/CD, self-hosted</td>
+                                    <td class="py-3 px-4">Complex, resource-heavy</td>
+                                    <td class="py-3 px-4">Self-hosted needs</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Bitbucket</td>
+                                    <td class="py-3 px-4">$0-15/user</td>
+                                    <td class="py-3 px-4">Jira integration</td>
+                                    <td class="py-3 px-4">Slower, smaller community</td>
+                                    <td class="py-3 px-4">Atlassian shops</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Azure DevOps</td>
+                                    <td class="py-3 px-4 cost-paid">$6/user/mo</td>
+                                    <td class="py-3 px-4">Microsoft integration</td>
+                                    <td class="py-3 px-4">Vendor lock-in</td>
+                                    <td class="py-3 px-4">Azure-only shops</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                        <p class="text-blue-800 text-sm">
+                            <strong>Decision Matrix:</strong> CodeCommit > GitLab (free tier) > GitHub > Azure DevOps for cost priority. GitHub > GitLab > Azure DevOps > Bitbucket for features.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CodeBuild Tab -->
+            <div id="codebuild" class="tab-content">
+                <div class="card p-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-16 h-16 rounded-xl bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-hammer text-blue-600 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Build Service: AWS CodeBuild</h3>
+                            <p class="text-gray-600">Serverless build service with Docker support</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Why CodeBuild?</h4>
+                        <ul class="space-y-2 text-gray-600">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>100 build minutes/month free</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>No build servers to manage</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Native Docker support for any environment</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Caching support for faster builds</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full comparison-table text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4 text-left rounded-tl-lg">Tool</th>
+                                    <th class="py-3 px-4 text-left">Cost</th>
+                                    <th class="py-3 px-4 text-left">Pros</th>
+                                    <th class="py-3 px-4 text-left">Cons</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="bg-green-50">
+                                    <td class="py-3 px-4 font-semibold text-green-700">CodeBuild</td>
+                                    <td class="py-3 px-4 cost-free font-bold">FREE (100 min)</td>
+                                    <td class="py-3 px-4">Serverless, AWS native</td>
+                                    <td class="py-3 px-4">250MB memory limit free tier</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">GitHub Actions</td>
+                                    <td class="py-3 px-4">$0-0.008/min</td>
+                                    <td class="py-3 px-4">Huge marketplace, easy YAML</td>
+                                    <td class="py-3 px-4">Costs after 2,000 minutes</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">GitLab CI</td>
+                                    <td class="py-3 px-4">$0 (self-hosted)</td>
+                                    <td class="py-3 px-4">Integrated, K8s native</td>
+                                    <td class="py-3 px-4">Need runners</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Jenkins</td>
+                                    <td class="py-3 px-4">$0 (self-hosted)</td>
+                                    <td class="py-3 px-4">Infinite plugins, mature</td>
+                                    <td class="py-3 px-4">High maintenance, security risk</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">CircleCI</td>
+                                    <td class="py-3 px-4">$0-15/month</td>
+                                    <td class="py-3 px-4">Fast, Docker native</td>
+                                    <td class="py-3 px-4">Credit pricing confusing</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Terraform Tab -->
+            <div id="terraform" class="tab-content">
+                <div class="card p-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-16 h-16 rounded-xl bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-cube text-purple-600 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Infrastructure: Terraform</h3>
+                            <p class="text-gray-600">Cloud-agnostic Infrastructure as Code</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Why Terraform?</h4>
+                        <ul class="space-y-2 text-gray-600">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Cloud-agnostic (AWS, Azure, GCP)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>State management tracks all changes</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Massive provider ecosystem</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Free and open source</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full comparison-table text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4 text-left rounded-tl-lg">Tool</th>
+                                    <th class="py-3 px-4 text-left">Type</th>
+                                    <th class="py-3 px-4 text-left">Pros</th>
+                                    <th class="py-3 px-4 text-left">Cons</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="bg-green-50">
+                                    <td class="py-3 px-4 font-semibold text-green-700">Terraform</td>
+                                    <td class="py-3 px-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Declarative</span></td>
+                                    <td class="py-3 px-4">Multi-cloud, mature, free</td>
+                                    <td class="py-3 px-4">State file complexity</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">CloudFormation</td>
+                                    <td class="py-3 px-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Declarative</span></td>
+                                    <td class="py-3 px-4">Native AWS, free</td>
+                                    <td class="py-3 px-4">AWS-only, verbose YAML</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Pulumi</td>
+                                    <td class="py-3 px-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Imperative</span></td>
+                                    <td class="py-3 px-4">Real programming languages</td>
+                                    <td class="py-3 px-4">Newer, smaller community</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Ansible</td>
+                                    <td class="py-3 px-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Imperative</span></td>
+                                    <td class="py-3 px-4">Simple, agentless</td>
+                                    <td class="py-3 px-4">Not true IaC, config drift</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">CDK</td>
+                                    <td class="py-3 px-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Imperative</span></td>
+                                    <td class="py-3 px-4">AWS native, TypeScript</td>
+                                    <td class="py-3 px-4">AWS-only, abstraction leaks</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 grid md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h5 class="font-semibold text-gray-900 mb-2">Declarative (Terraform)</h5>
+                            <p class="text-sm text-gray-600">You describe <em>what</em> you want. Terraform figures out <em>how</em> to get there.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h5 class="font-semibold text-gray-900 mb-2">Imperative (Pulumi/CDK)</h5>
+                            <p class="text-sm text-gray-600">You describe <em>how</em> to build it. More control, but more code.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lambda Tab -->
+            <div id="lambda" class="tab-content">
+                <div class="card p-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-16 h-16 rounded-xl bg-yellow-100 flex items-center justify-center">
+                            <i class="fas fa-bolt text-yellow-600 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Serverless: AWS Lambda</h3>
+                            <p class="text-gray-600">Event-driven compute without servers</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Why Lambda?</h4>
+                        <ul class="space-y-2 text-gray-600">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>1M requests/month free</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Pay only for execution time (ms granularity)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>Auto-scales to zero and infinity</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-500 mt-1"></i>
+                                <span>No server management required</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full comparison-table text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 px-4 text-left rounded-tl-lg">Tool</th>
+                                    <th class="py-3 px-4 text-left">Free Tier</th>
+                                    <th class="py-3 px-4 text-left">Cold Start</th>
+                                    <th class="py-3 px-4 text-left">Best For</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="bg-green-50">
+                                    <td class="py-3 px-4 font-semibold text-green-700">AWS Lambda</td>
+                                    <td class="py-3 px-4 cost-free font-bold">1M req</td>
+                                    <td class="py-3 px-4">100-1000ms</td>
+                                    <td class="py-3 px-4">Event-driven, AWS</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Azure Functions</td>
+                                    <td class="py-3 px-4 cost-free">1M req</td>
+                                    <td class="py-3 px-4">200-2000ms</td>
+                                    <td class="py-3 px-4">Azure shops</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Cloud Functions</td>
+                                    <td class="py-3 px-4 cost-free">2M req</td>
+                                    <td class="py-3 px-4">100-500ms</td>
+                                    <td class="py-3 px-4">Google Cloud</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Cloudflare Workers</td>
+                                    <td class="py-3 px-4 cost-free">100K/day</td>
+                                    <td class="py-3 px-4">0ms (always warm)</td>
+                                    <td class="py-3 px-4">Edge computing</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-semibold">Vercel/Netlify</td>
+                                    <td class="py-3 px-4 cost-free">100GB</td>
+                                    <td class="py-3 px-4">0ms (always warm)</td>
+                                    <td class="py-3 px-4">JAMstack/frontend</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                        <p class="text-yellow-800 text-sm">
+                            <strong>Cold Start Note:</strong> Lambda has cold starts (100-1000ms) but stays warm for ~5 minutes after invocation. For instant response, consider Cloudflare Workers or provisioned concurrency.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <div class="section-divider max-w-4xl mx-auto"></div>
+    
+    <!-- Implementation Section -->
+    <section id="implementation" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Implementation Guide</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Step-by-step instructions to deploy your own serverless DevOps pipeline.
+                </p>
+            </div>
+            
+            <!-- Step 1: Prerequisites -->
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl">1</div>
+                    <h3 class="text-2xl font-bold text-gray-900">Prerequisites</h3>
+                </div>
+                
+                <div class="ml-16 space-y-4">
+                    <p class="text-gray-600">Before starting, ensure you have these tools installed:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">bash</span>
+                        </div>
+                        <pre><code class="language-bash"># Check AWS CLI
+aws --version  # Should be 2.x
+
+# Check Terraform
+terraform --version  # Should be 1.5+
+
+# Verify AWS credentials
+aws configure list
+aws sts get-caller-identity</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2: Project Structure -->
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl">2</div>
+                    <h3 class="text-2xl font-bold text-gray-900">Project Structure</h3>
+                </div>
+                
+                <div class="ml-16">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">tree</span>
+                        </div>
+                        <pre><code class="language-bash">devops-pipeline/
+├── 📁 terraform/           # Infrastructure code
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── backend.tf
+├── 📁 src/                 # Application code
+│   ├── app.py
+│   └── requirements.txt
+├── 📁 buildspec/           # Build configurations
+│   └── buildspec.yml
+├── 📁 lambda/              # Lambda functions
+│   └── deploy_function.py
+├── 📁 scripts/             # Utility scripts
+│   ├── setup.sh
+│   └── cleanup.sh
+├── 📄 README.md
+└── 📄 .gitignore</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: Terraform Configuration -->
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl">3</div>
+                    <h3 class="text-2xl font-bold text-gray-900">Terraform Configuration</h3>
+                </div>
+                
+                <div class="ml-16 space-y-6">
+                    <p class="text-gray-600">First, configure the Terraform backend for state management:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">terraform/backend.tf</span>
+                        </div>
+                        <pre><code class="language-hcl"># WHY: Remote state is REQUIRED for team collaboration
+# Stores state file in S3 with DynamoDB locking
+# Prevents concurrent modifications that corrupt state
+
+terraform {
+  backend "s3" {
+    bucket         = "terraform-state-755953012638"
+    key            = "devops-pipeline/terraform.tfstate"
+    region         = "ap-south-1"
+    encrypt        = true
+    dynamodb_table = "terraform-locks"
+  }
+}</code></pre>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">terraform/variables.tf</span>
+                        </div>
+                        <pre><code class="language-hcl"># WHY: Variables make code reusable and environment-specific
+# No hardcoded values = no secrets in Git
+
+variable "aws_region" {
+  description = "AWS region for all resources"
+  type        = string
+  default     = "ap-south-1"
+}
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "dev"
+  
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod"
+  }
+}
+
+variable "project_name" {
+  description = "Name prefix for all resources"
+  type        = string
+  default     = "devops-pipeline"
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 4: Buildspec -->
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl">4</div>
+                    <h3 class="text-2xl font-bold text-gray-900">Build Specification</h3>
+                </div>
+                
+                <div class="ml-16">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">buildspec.yml</span>
+                        </div>
+                        <pre><code class="language-yaml"># BUILDSPEC - AWS CodeBuild Configuration
+# WHY: Tells CodeBuild HOW to build your application
+
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - pip install --upgrade pip
+      - pip install -r requirements.txt
+  
+  pre_build:
+    commands:
+      - echo "Running security checks..."
+      - bandit -r . || true
+  
+  build:
+    commands:
+      - echo "Running tests..."
+      - pytest tests/ -v || true
+      - echo "Building application..."
+      - zip -r deployment-package.zip . -x "*.git*"
+  
+  post_build:
+    commands:
+      - aws s3 cp deployment-package.zip s3://${artifact_bucket}/
+      - aws lambda invoke --function-name ${lambda_function} --payload '{}'
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
+    - 'node_modules/**/*'</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 5: Deploy -->
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl">5</div>
+                    <h3 class="text-2xl font-bold text-gray-900">Deploy Infrastructure</h3>
+                </div>
+                
+                <div class="ml-16 space-y-4">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">bash</span>
+                        </div>
+                        <pre><code class="language-bash"># Step 1: Create S3 bucket for Terraform state
+aws s3 mb s3://terraform-state-$(aws sts get-caller-identity --query Account --output text) --region ap-south-1
+
+# Step 2: Enable versioning
+aws s3api put-bucket-versioning \
+    --bucket terraform-state-ACCOUNT_ID \
+    --versioning-configuration Status=Enabled
+
+# Step 3: Initialize Terraform
+cd terraform
+terraform init
+
+# Step 4: Review changes
+terraform plan -out=tfplan
+
+# Step 5: Deploy infrastructure
+terraform apply tfplan</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 6: Test -->
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl">6</div>
+                    <h3 class="text-2xl font-bold text-gray-900">Test the Pipeline</h3>
+                </div>
+                
+                <div class="ml-16 space-y-4">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dot red"></div>
+                            <div class="code-dot yellow"></div>
+                            <div class="code-dot green"></div>
+                            <span class="text-gray-400 text-sm ml-2">bash</span>
+                        </div>
+                        <pre><code class="language-bash"># Configure Git to use CodeCommit
+git config --global credential.helper '!aws codecommit credential-helper $@'
+git config --global credential.UseHttpPath true
+
+# Clone the repository
+git clone https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/devops-pipeline-dev-repo
+
+# Make a change and push
+cd devops-pipeline-dev-repo
+echo "# Test" >> README.md
+git add .
+git commit -m "Test pipeline trigger"
+git push origin main
+
+# Watch the pipeline run
+aws codebuild batch-get-builds --ids BUILD_ID</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Success Message -->
+            <div class="ml-16 p-6 bg-green-50 rounded-xl border border-green-200">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fas fa-check-circle text-green-500 text-2xl"></i>
+                    <h4 class="font-bold text-green-900 text-lg">Pipeline Deployed Successfully!</h4>
+                </div>
+                <p class="text-green-700">
+                    Your serverless DevOps pipeline is now running. Every git push will automatically trigger a build, run tests, and deploy your application. Check your email for build notifications!
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <div class="section-divider max-w-4xl mx-auto"></div>
+    
+    <!-- Cost Analysis Section -->
+    <section id="costs" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Cost Analysis</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Detailed breakdown of AWS Free Tier limits vs actual usage.
+                </p>
+            </div>
+            
+            <!-- Cost Visualization -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <!-- Free Tier Limits -->
+                <div class="card p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">AWS Free Tier Limits</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">CodeBuild</span>
+                                <span class="text-sm text-gray-500">100 min/month</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">Lambda</span>
+                                <span class="text-sm text-gray-500">1M requests/month</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">S3 Storage</span>
+                                <span class="text-sm text-gray-500">5GB</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">DynamoDB</span>
+                                <span class="text-sm text-gray-500">25GB storage</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">SNS</span>
+                                <span class="text-sm text-gray-500">1M publishes/month</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Expected Usage -->
+                <div class="card p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Your Expected Usage</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">CodeBuild</span>
+                                <span class="text-sm text-green-600 font-semibold">~50 min (50%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-500 h-2.5 rounded-full" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">Lambda</span>
+                                <span class="text-sm text-green-600 font-semibold">~1K requests (0.1%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-500 h-2.5 rounded-full" style="width: 1%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">S3 Storage</span>
+                                <span class="text-sm text-green-600 font-semibold">~500MB (10%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-500 h-2.5 rounded-full" style="width: 10%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">DynamoDB</span>
+                                <span class="text-sm text-green-600 font-semibold">~100MB (0.4%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-500 h-2.5 rounded-full" style="width: 0.4%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">SNS</span>
+                                <span class="text-sm text-green-600 font-semibold">~100 publishes (0.01%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-500 h-2.5 rounded-full" style="width: 0.1%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cost Summary Table -->
+            <div class="card overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                        <tr>
+                            <th class="py-4 px-6 text-left font-semibold">Service</th>
+                            <th class="py-4 px-6 text-left font-semibold">Free Tier</th>
+                            <th class="py-4 px-6 text-left font-semibold">Your Usage</th>
+                            <th class="py-4 px-6 text-left font-semibold">Monthly Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">CodeBuild</td>
+                            <td class="py-4 px-6 text-gray-600">100 min</td>
+                            <td class="py-4 px-6 text-gray-600">~50 min</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">Lambda</td>
+                            <td class="py-4 px-6 text-gray-600">1M req + 400K GB-s</td>
+                            <td class="py-4 px-6 text-gray-600">~1K req</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">S3</td>
+                            <td class="py-4 px-6 text-gray-600">5GB + 20K GET</td>
+                            <td class="py-4 px-6 text-gray-600">~500MB</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">DynamoDB</td>
+                            <td class="py-4 px-6 text-gray-600">25GB + 200M req</td>
+                            <td class="py-4 px-6 text-gray-600">~100MB</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">SNS</td>
+                            <td class="py-4 px-6 text-gray-600">1M publishes</td>
+                            <td class="py-4 px-6 text-gray-600">~100</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">CloudWatch</td>
+                            <td class="py-4 px-6 text-gray-600">10 metrics</td>
+                            <td class="py-4 px-6 text-gray-600">~5</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-6 font-medium text-gray-900">CodeCommit</td>
+                            <td class="py-4 px-6 text-gray-600">5 users</td>
+                            <td class="py-4 px-6 text-gray-600">1 user</td>
+                            <td class="py-4 px-6 text-green-600 font-bold">$0</td>
+                        </tr>
+                        <tr class="bg-green-50 font-bold">
+                            <td class="py-4 px-6 text-green-900">TOTAL</td>
+                            <td class="py-4 px-6 text-green-900">-</td>
+                            <td class="py-4 px-6 text-green-900">-</td>
+                            <td class="py-4 px-6 text-green-600 text-xl">$0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Cost Traps Warning -->
+            <div class="mt-8 p-6 bg-red-50 rounded-xl border border-red-200">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-red-900 mb-2">Cost Traps to Watch Out For</h4>
+                        <ul class="space-y-2 text-red-700 text-sm">
+                            <li><strong>Elastic IPs:</strong> $0.005/hour when NOT attached to running EC2 (release unused IPs)</li>
+                            <li><strong>EBS Volumes:</strong> $0.10/GB/month even if EC2 is stopped (delete volumes you don't need)</li>
+                            <li><strong>NAT Gateway:</strong> ~$32/month + $0.045/GB (use VPC endpoints or single NAT per AZ)</li>
+                            <li><strong>Data Transfer:</strong> $0.09/GB outbound (stay under free limits)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white font-bold">
+                            🔬
+                        </div>
+                        <div>
+                            <h3 class="font-bold">Preethi</h3>
+                            <p class="text-xs text-gray-400">AI Research Assistant</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Helping Pradeep build production-grade DevOps infrastructure on AWS Free Tier.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#overview" class="hover:text-white transition-colors">Overview</a></li>
+                        <li><a href="#architecture" class="hover:text-white transition-colors">Architecture</a></li>
+                        <li><a href="#tools" class="hover:text-white transition-colors">Tools</a></li>
+                        <li><a href="#implementation" class="hover:text-white transition-colors">Implementation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="https://docs.aws.amazon.com/" class="hover:text-white transition-colors">AWS Documentation</a></li>
+                        <li><a href="https://www.terraform.io/docs" class="hover:text-white transition-colors">Terraform Docs</a></li>
+                        <li><a href="https://mermaid.live" class="hover:text-white transition-colors">Mermaid Live Editor</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>Built with ❤️ using AWS Free Tier · Document Version 1.0 · March 2026</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                // Update buttons
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-gradient-to-r', 'from-purple-600', 'to-blue-600', 'text-white', 'shadow-lg');
+                    b.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                btn.classList.remove('bg-gray-200', 'text-gray-700');
+                btn.classList.add('active', 'bg-gradient-to-r', 'from-purple-600', 'to-blue-600', 'text-white', 'shadow-lg');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Scroll progress indicator
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (scrollTop / scrollHeight) * 100;
+            document.getElementById('scrollIndicator').style.width = scrolled + '%';
+        });
+        
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        });
+        
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Close mobile menu if open
+                    document.getElementById('mobileMenu').classList.add('hidden');
+                }
+            });
+        });
+        
+        // Highlight active section in navigation
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
